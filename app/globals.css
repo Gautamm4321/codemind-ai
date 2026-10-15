@@ -1,0 +1,155 @@
+@import "tailwindcss";
+
+/*
+ * CodeMind AI brand theme
+ * - Beige (--color-beige) is the background on every page.
+ * - Ink (--color-navy) is used for all text, headings, lines, borders and buttons.
+ * Change the two values below to re-theme the whole app (code view and charts included).
+ * Use the `beige` and `navy` utilities (bg-beige, text-navy, border-navy, ...).
+ * Lighter navy tones are done with opacity (text-navy/60, border-navy/20), never a new color.
+ */
+@theme {
+  --color-beige: #E8DCC8;
+  --color-navy: #000000;
+
+  /* Artisun typography: Suisse Int'l for text, PP Editorial New for headings (upright, never italic) */
+  --font-sans: var(--font-suisse), "Helvetica Neue", Arial, sans-serif;
+  --font-serif: var(--font-editorial), Georgia, serif;
+  /* Logo only */
+  --font-logo: "Playfair Display Variable", Georgia, serif;
+  --font-logo-sub: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+@layer base {
+  /* No italics anywhere (the logo opts back in via .logo-mark) */
+  em,
+  i,
+  cite,
+  address,
+  dfn,
+  var {
+    font-style: normal;
+  }
+
+  /* Suisse ships 400 and 500 only, so cap bold text at medium instead of faking bold */
+  b,
+  strong {
+    font-weight: 500;
+  }
+
+  html,
+  body {
+    background-color: var(--color-beige);
+    color: var(--color-navy);
+  }
+
+  *,
+  ::before,
+  ::after {
+    border-color: var(--color-navy);
+  }
+
+  ::selection {
+    background-color: var(--color-navy);
+    color: var(--color-beige);
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: color-mix(in srgb, var(--color-navy) 45%, transparent);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-navy);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* Pill buttons, styled after the "Hex" pills in the brand reference */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-navy px-5 py-2 text-sm font-medium text-navy transition-colors disabled:cursor-not-allowed disabled:opacity-40;
+  }
+  .btn:not(:disabled):hover {
+    @apply bg-navy text-beige;
+  }
+  .btn-solid {
+    @apply bg-navy text-beige;
+  }
+  .btn-solid:not(:disabled):hover {
+    @apply bg-beige text-navy;
+  }
+
+  .panel {
+    @apply rounded-2xl border border-navy/80 bg-beige;
+  }
+
+  /* Headings: PP Editorial New, regular weight, upright, tight like Artisun */
+  .heading-serif {
+    @apply font-serif font-normal not-italic leading-[1.05] tracking-tight;
+  }
+
+  /* Small section labels: Suisse medium, uppercase, wide tracking (Artisun's label style) */
+  .label {
+    @apply font-sans text-[11px] font-medium tracking-[0.14em] uppercase;
+  }
+
+  /* The CodeMind AI logo keeps its original look */
+  .logo-mark {
+    font-family: var(--font-logo);
+    font-style: italic;
+    letter-spacing: -0.025em;
+  }
+  .logo-mark-sub {
+    font-family: var(--font-logo-sub);
+    font-style: normal;
+    font-weight: 600;
+    letter-spacing: 0;
+  }
+
+  /* Markdown output from the AI */
+  .prose-navy {
+    @apply text-[15px] leading-relaxed text-navy;
+  }
+  .prose-navy h1,
+  .prose-navy h2,
+  .prose-navy h3 {
+    @apply mt-5 mb-2 font-serif text-2xl font-normal not-italic leading-tight tracking-tight;
+  }
+  .prose-navy p {
+    @apply my-2;
+  }
+  .prose-navy ul {
+    @apply my-2 list-disc pl-5;
+  }
+  .prose-navy ol {
+    @apply my-2 list-decimal pl-5;
+  }
+  .prose-navy strong,
+  .prose-navy b {
+    @apply font-medium;
+  }
+  .prose-navy em,
+  .prose-navy i {
+    @apply not-italic;
+  }
+  .prose-navy code {
+    @apply rounded border border-navy/30 px-1 py-0.5 font-mono text-[13px];
+  }
+  .prose-navy pre {
+    @apply my-3 overflow-x-auto rounded-lg border border-navy/40 p-3;
+  }
+  .prose-navy pre code {
+    @apply border-0 p-0;
+  }
+  .prose-navy a {
+    @apply underline underline-offset-2;
+  }
+}
+
+/* Thin navy scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--color-navy) 35%, transparent) transparent;
+}
