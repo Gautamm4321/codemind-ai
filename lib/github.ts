@@ -6,6 +6,12 @@ import type { FileContent, LanguageShare, RepoData, RepoMeta, TreeFile } from "@
 
 const API = "https://api.github.com";
 
+/**
+ * Set when GitHub rejects GITHUB_TOKEN (expired, revoked or mistyped). The app then keeps
+ * working without a token (public repos, 60 requests/hour) instead of failing every request.
+ */
+let tokenRejected = false;
+
 function headers(accept = "application/vnd.github+json"): HeadersInit {
   const h: Record<string, string> = {
     Accept: accept,
@@ -13,7 +19,8 @@ function headers(accept = "application/vnd.github+json"): HeadersInit {
     "User-Agent": "codemind-ai",
   };
   // Server-side only. Never expose this to the browser.
-  if (process.env.GITHUB_TOKEN) h.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
+  const token = process.env.GITHUB_TOKEN?.trim();
+  if (token && !tokenRejected) h.Authorization = `Bearer ${token}`;
   return h;
 }
 
@@ -40,6 +47,13 @@ async function gh(url: string, opts: GhOptions = {}): Promise<Response> {
 
   if (res.ok) return res;
 
+  // Bad token: fall back to unauthenticated requests rather than breaking the site.
+  if (res.status === 401 && process.env.GITHUB_TOKEN && !tokenRejected) {
+    tokenRejected = true;
+    console.warn("[codemind] GitHub rejected GITHUB_TOKEN (expired, revoked or mistyped). Continuing without it; replace the token to restore the higher rate limit.");
+    return gh(url, opts);
+  }
+
   const remaining = res.headers.get("x-ratelimit-remaining");
   if (res.status === 429 || (res.status === 403 && remaining === "0")) {
     const reset = Number(res.headers.get("x-ratelimit-reset"));
@@ -47,7 +61,7 @@ async function gh(url: string, opts: GhOptions = {}): Promise<Response> {
     throw new AppError(
       "GITHUB_RATE_LIMIT",
       `GitHub rate limit reached.${mins ? ` Try again in about ${mins} min.` : ""}${
-        process.env.GITHUB_TOKEN ? "" : " Adding a GITHUB_TOKEN raises the limit."
+        process.env.GITHUB_TOKEN && !tokenRejected ? "" : " Adding a valid GITHUB_TOKEN raises the limit."
       }`,
       429,
     );
