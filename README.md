@@ -1,5 +1,7 @@
 # CodeMind AI
 
+**Live demo:** https://codemind-ai-delta.vercel.app
+
 AI codebase intelligence for public GitHub repositories. Paste a repo URL to get:
 
 - Repo metadata, a language breakdown and a filtered file tree
