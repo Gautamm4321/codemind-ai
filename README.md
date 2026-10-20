@@ -31,7 +31,7 @@ AI codebase intelligence for public GitHub repositories. Paste a repo URL to get
 | Backend | Next.js Route Handlers (no separate server) |
 | Validation | Zod (requests and AI JSON output) |
 | Data | GitHub REST API with a server-side token |
-| AI | Groq (Llama 3.3 70B) behind a provider layer; switch to Gemini with one env var |
+| AI | Groq (gpt-oss-20b, with automatic fallback between models) behind a provider layer; switch to Gemini with one env var |
 | Code display | react-syntax-highlighter (custom monochrome navy theme) |
 | Icons | Lucide React |
 | Tests | Vitest |
