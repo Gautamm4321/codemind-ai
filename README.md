@@ -13,7 +13,15 @@ AI codebase intelligence for public GitHub repositories. Paste a repo URL to get
 - **Report export**: download the overview and all chat Q&A (with sources) as a Markdown report
 - Large files are handled honestly: the AI sees the start and end of the file and the UI says exactly how much was analyzed
 
-> Screenshots and a demo GIF go here (Week 4).
+## Screenshots
+
+| Home | Project overview |
+| --- | --- |
+| ![Home page](docs/screenshots/landing.png) | ![AI project overview](docs/screenshots/overview.png) |
+
+| Chat with verified sources | Code review |
+| --- | --- |
+| ![Chat answer with verified file citations](docs/screenshots/chat.png) | ![AI code review of a large file](docs/screenshots/review.png) |
 
 ## Tech stack
 
