@@ -13,6 +13,7 @@ export type ErrorCode =
   | "AI_ERROR"
   | "AI_NOT_CONFIGURED"
   | "RATE_LIMITED"
+  | "AI_BAD_JSON"
   | "INTERNAL";
 
 export class AppError extends Error {

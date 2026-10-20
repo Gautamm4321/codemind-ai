@@ -63,7 +63,13 @@ async function callProvider(body: Record<string, unknown>): Promise<Response> {
       res = await fetch(`${p.baseUrl}/chat/completions`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${p.apiKey}` },
-        body: JSON.stringify({ model, temperature: 0.2, ...body }),
+        body: JSON.stringify({
+          model,
+          temperature: 0.2,
+          // Reasoning models (gpt-oss) spend output tokens "thinking"; keep that short so answers aren't cut off.
+          ...(model.startsWith("openai/gpt-oss") ? { reasoning_effort: "low" } : {}),
+          ...body,
+        }),
         cache: "no-store",
       });
     } catch {
@@ -104,6 +110,11 @@ async function callProvider(body: Record<string, unknown>): Promise<Response> {
     throw new AppError("AI_NOT_CONFIGURED", `${p.name} rejected the API key.`, 500);
   }
   if (res.status === 413) throw new AppError("AI_ERROR", "Too much context for the model. Try a smaller file.", 413);
+  const errText = await res.clone().text();
+  if (res.status === 400 && /json_validate_failed|failed to generate json|max completion tokens/i.test(errText)) {
+    // JSON mode produced cut-off or invalid JSON. completeJSON() catches this and retries.
+    throw new AppError("AI_BAD_JSON", "The AI response was cut off or not valid JSON.", 502);
+  }
   console.error(`[codemind] ${p.name} error ${res.status}:`, (await res.text()).slice(0, 500));
   throw new AppError("AI_ERROR", `${p.name} returned an error (${res.status}).`, 502);
 }
@@ -121,14 +132,29 @@ export async function complete(messages: AIMessage[], maxTokens = 1200): Promise
  */
 export async function completeJSON<T>(messages: AIMessage[], schema: z.ZodType<T>, maxTokens = 1500): Promise<T> {
   let convo = [...messages];
-  for (let attempt = 0; attempt < 2; attempt++) {
-    const res = await callProvider({ messages: convo, max_tokens: maxTokens, response_format: { type: "json_object" } });
-    const data = (await res.json()) as { choices?: { message?: { content?: string } }[] };
-    const raw = data.choices?.[0]?.message?.content ?? "";
+  // Up to 3 attempts: JSON mode, JSON mode with more room, then plain text that we parse ourselves.
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const jsonMode = attempt < 2;
+    let raw = "";
+    try {
+      const res = await callProvider({
+        messages: convo,
+        max_tokens: Math.min(maxTokens * (attempt + 1), 4000),
+        ...(jsonMode ? { response_format: { type: "json_object" } } : {}),
+      });
+      const data = (await res.json()) as { choices?: { message?: { content?: string } }[] };
+      raw = data.choices?.[0]?.message?.content ?? "";
+    } catch (err) {
+      if (err instanceof AppError && err.code === "AI_BAD_JSON") {
+        console.warn(`[codemind] JSON attempt ${attempt + 1} was cut off or invalid; retrying…`);
+        continue;
+      }
+      throw err;
+    }
 
     let parsed: unknown;
     try {
-      parsed = JSON.parse(stripFences(raw));
+      parsed = JSON.parse(extractJson(raw));
     } catch {
       parsed = undefined;
     }
@@ -143,6 +169,14 @@ export async function completeJSON<T>(messages: AIMessage[], schema: z.ZodType<T
     ];
   }
   throw new AppError("AI_ERROR", "The AI returned an unexpected format. Please try again.", 502);
+}
+
+/** Pulls the JSON object out of a reply that may include code fences or extra text. */
+export function extractJson(s: string): string {
+  const t = stripFences(s);
+  const start = t.indexOf("{");
+  const end = t.lastIndexOf("}");
+  return start >= 0 && end > start ? t.slice(start, end + 1) : t;
 }
 
 function stripFences(s: string): string {

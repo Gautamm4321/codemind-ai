@@ -57,7 +57,7 @@ ${numbered.text}
         },
       ],
       reviewSchema,
-      1800,
+      2500,
     );
 
     const { issues, droppedLines } = sanitizeIssues(result.issues, numbered.lastLine);
